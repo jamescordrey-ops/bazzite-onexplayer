@@ -1,0 +1,53 @@
+#!/bin/bash
+# Interactive first-login setup. Run in a terminal (autostart does this).
+#   1. Asks for a Tailscale auth key (handed over on install day, never
+#      stored in this image) and joins the tailnet as "handheld",
+#      with Tailscale SSH enabled.
+#   2. Installs Decky Loader (official installer) if it is missing.
+#   3. Reports Handheld Daemon (HHD) status.
+set -u
+DONE_FLAG="$HOME/.config/muse/setup-done"
+mkdir -p "$(dirname "$DONE_FLAG")"
+
+echo "=== First-time setup ==="
+
+if ! tailscale status >/dev/null 2>&1; then
+    read -rsp "Paste the Tailscale auth key, then press Enter: " TSKEY
+    echo
+    if [ -n "${TSKEY:-}" ]; then
+        if sudo tailscale up --auth-key="$TSKEY" --ssh --hostname=handheld; then
+            sudo mkdir -p /var/lib/muse
+            sudo touch /var/lib/muse/tailscale-joined
+            echo "Joined. This device's Tailscale address:"
+            tailscale ip -4 || true
+        else
+            echo "tailscale up failed. Re-run: muse-join-tailscale"
+        fi
+        unset TSKEY
+    else
+        echo "No key entered, skipping the Tailscale join for now."
+        echo "Re-run any time with: muse-join-tailscale"
+    fi
+else
+    echo "Tailscale is already up:"
+    tailscale status | head -3 || true
+fi
+
+if [ ! -d "$HOME/homebrew" ]; then
+    echo "Installing Decky Loader..."
+    curl -fsSL https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_release.sh | sh \
+        || echo "Decky install did not finish; it can be installed later."
+else
+    echo "Decky Loader already present."
+fi
+
+echo -n "Handheld Daemon (HHD): "
+if systemctl is-active --quiet hhd.service 2>/dev/null; then
+    echo "active"
+else
+    echo "not active (this image may use InputPlumber for this device instead)"
+fi
+
+touch "$DONE_FLAG"
+echo "=== Setup finished. You can close this window. ==="
+read -rp "Press Enter to close." _ || true

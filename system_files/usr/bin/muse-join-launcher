@@ -1,0 +1,14 @@
+#!/bin/bash
+# Opens the first-login setup in a terminal, once, until it has run.
+[ -f "$HOME/.config/muse/setup-done" ] && exit 0
+for term in konsole kgx gnome-terminal xterm; do
+    if command -v "$term" >/dev/null 2>&1; then
+        case "$term" in
+            konsole)        exec konsole -e /bin/bash /usr/bin/muse-join-tailscale ;;
+            kgx)            exec kgx -- /bin/bash /usr/bin/muse-join-tailscale ;;
+            gnome-terminal) exec gnome-terminal -- /bin/bash /usr/bin/muse-join-tailscale ;;
+            xterm)          exec xterm -e /bin/bash /usr/bin/muse-join-tailscale ;;
+        esac
+    fi
+done
+exit 0

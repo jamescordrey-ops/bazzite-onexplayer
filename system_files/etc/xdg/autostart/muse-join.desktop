@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=First-time setup (Tailscale join)
+Comment=Joins this device to the tailnet and finishes setup
+Exec=/bin/bash /usr/bin/muse-join-launcher
+Terminal=false
+X-GNOME-Autostart-enabled=true
